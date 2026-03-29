@@ -4,3 +4,4 @@ kiteconnect
 pyarrow
 plotly
 streamlit-autorefresh
+altair==4.0
