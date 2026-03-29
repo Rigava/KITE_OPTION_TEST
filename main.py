@@ -167,7 +167,8 @@ col1.metric("Spot", round(spot_price, 2))
 col2.metric("Max Pain", max_pain)
 col3.metric("PCR", round(pcr, 2) if pcr else "-")
 col4.metric("Straddle", round(straddle, 2))
-st.write(atm_chain.schema)
+tbl = pa.Table.from_pandas(atm_chain)
+st.write(tbl.schema)
 
 # ---------------- TABLES ---------------- #
 with st.expander("📌 Current ATM Option Chain"):
