@@ -168,7 +168,7 @@ col2.metric("Max Pain", max_pain)
 col3.metric("PCR", round(pcr, 2) if pcr else "-")
 col4.metric("Straddle", round(straddle, 2))
 tbl = pa.Table.from_pandas(atm_chain)
-st.dataframe(atm_chain)
+st.write(type(atm_chain))
 
 # st.write(repr(tbl))
 # st.dataframe(tbl)
