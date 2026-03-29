@@ -33,7 +33,7 @@ if "ws_started" not in st.session_state:
     st.session_state.ws_started = False
 
 # ---------------- INPUT ---------------- #
-default_enctoken = "BHqPx1Jd4Ou0TQb8uBxDBYpwtE/U9i7TEjKVjmVsEGBZ2F++qPa7t2rdbS3f1twVDF9zgK9A3S0Yimx51kotyKaj+0VIalRz1BU50vgZrfn5yRxYpjJdgw=="
+default_enctoken = "Jq9GV9Bv1JZzWecGGhTnCO5nyDeIa//jaE/DsQ9n3zKKokeiWMA+yRyOXYgofs2sXJZvb+nlMpivri51CqSIuSGntCfsRsoGQ/wsJ4xPwi7JCt5x6BXnzA=="
 ENCTOKEN = st.sidebar.text_input("Enter enctoken", value=default_enctoken, type="password")
 USER_ID = st.sidebar.text_input("User ID", value="ZM1064")
 
