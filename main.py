@@ -11,6 +11,17 @@ from metrics import (
     calculate_pcr, get_max_pain
 )
 import time
+# ---------------- STOP WS ---------------- #
+def stop_ws():
+    if "kws" in st.session_state:
+        try:
+            st.session_state.kws.close()
+        except:
+            pass
+        del st.session_state.kws
+
+    st.session_state.ws_started = False
+
 # ---------------- CONFIG ---------------- #
 st.set_page_config(layout="wide")
 st.title("📊 NIFTY 50 Live Tracker")
@@ -40,6 +51,8 @@ USER_ID = st.sidebar.text_input("User ID", value="ZM1064")
 # with open("loginCredential.json") as f:
 #     api_key = json.load(f)["api_key"]
 api_key =st.secrets['API_KEY']
+
+stop_button = st.sidebar.button("🛑 Stop")
 # ---------------- LOAD INSTRUMENTS ---------------- #
 @st.cache_data
 def load_instruments():
@@ -107,6 +120,10 @@ while len(ltp_data) == 0 or spot_price is None:
 
     time.sleep(0.5)
 
+if stop_button:
+    stop_ws()
+    st.warning("WebSocket stopped")
+    st.stop()
 # ---------------- BUILD CHAIN ---------------- #
 chain = build_option_chain(options_df, ltp_data)
 
