@@ -169,15 +169,16 @@ col3.metric("PCR", round(pcr, 2) if pcr else "-")
 col4.metric("Straddle", round(straddle, 2))
 tbl = pa.Table.from_pandas(atm_chain)
 st.write(atm_chain.dtypes)
+
 # st.write(repr(tbl))
 # st.dataframe(tbl)
 
 # ---------------- TABLES ---------------- #
-with st.expander("📌 Current ATM Option Chain"):
-    st.dataframe(tbl)
+# with st.expander("📌 Current ATM Option Chain"):
+    # st.dataframe(tbl)
 
 with st.expander("📈 Historical Data"):
-    st.dataframe(st.session_state.history_df)
+    st.write(st.session_state.history_df)
 
 # ---------------- CHARTS ---------------- #
 st.subheader(f"📊 ATM Strike Trend: {atm}")
