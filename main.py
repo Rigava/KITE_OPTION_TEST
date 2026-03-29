@@ -169,7 +169,8 @@ col3.metric("PCR", round(pcr, 2) if pcr else "-")
 col4.metric("Straddle", round(straddle, 2))
 tbl = pa.Table.from_pandas(atm_chain)
 st.write(tbl.schema)
-st.write(repr(tbl))
+# st.write(repr(tbl))
+st.dataframe(tbl)
 
 # ---------------- TABLES ---------------- #
 with st.expander("📌 Current ATM Option Chain"):
