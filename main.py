@@ -11,6 +11,7 @@ from metrics import (
     calculate_pcr, get_max_pain
 )
 import time
+import pyarrow as pa
 # ---------------- STOP WS ---------------- #
 def stop_ws():
     if "kws" in st.session_state:
@@ -169,7 +170,7 @@ col4.metric("Straddle", round(straddle, 2))
 
 # ---------------- TABLES ---------------- #
 with st.expander("📌 Current ATM Option Chain"):
-    st.dataframe(atm_chain)
+    st.dataframe(pa.Table.from_pandas(atm_chain))
 
 with st.expander("📈 Historical Data"):
     st.dataframe(st.session_state.history_df)
