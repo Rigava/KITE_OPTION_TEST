@@ -5,3 +5,4 @@ pyarrow
 plotly
 streamlit-autorefresh
 altair==4.0
+python-magic
