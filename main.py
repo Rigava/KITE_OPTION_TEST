@@ -178,7 +178,7 @@ st.write(type(atm_chain))
     # st.dataframe(tbl)
 
 with st.expander("📈 Historical Data"):
-    st.write(type(st.session_state.history_df))
+    # st.write(type(st.session_state.history_df))
     st.write(st.session_state.history_df)
 
 # ---------------- CHARTS ---------------- #
