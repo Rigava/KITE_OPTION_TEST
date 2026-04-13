@@ -18,27 +18,26 @@ st.title("📊 NIFTY 50 Live Tracker")
 
 INDEX = "NIFTY"
 INDEX_TOKEN = 256265
-
 api_key = st.secrets['API_KEY']
 
 ENCTOKEN = st.sidebar.text_input("Enter enctoken", type="password")
 USER_ID = st.sidebar.text_input("User ID")
 
-# ---------------- SESSION STATE INIT ---------------- #
-if "kws" not in st.session_state:
-    st.session_state.kws = None
+# ---------------- SESSION STATE ---------------- #
+def init_state():
+    defaults = {
+        "kws": None,
+        "ws_started": False,
+        "ltp_data": {},
+        "spot_price": None,
+        "history_df": pd.DataFrame(),
+        "last_ws_connect": 0
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
 
-if "ws_started" not in st.session_state:
-    st.session_state.ws_started = False
-
-if "ltp_data" not in st.session_state:
-    st.session_state.ltp_data = {}
-
-if "spot_price" not in st.session_state:
-    st.session_state.spot_price = None
-
-if "history_df" not in st.session_state:
-    st.session_state.history_df = pd.DataFrame()
+init_state()
 
 # ---------------- LOAD INSTRUMENTS ---------------- #
 @st.cache_data
@@ -64,7 +63,7 @@ token_list.append(INDEX_TOKEN)
 
 st.write(f"Subscribed tokens: {len(token_list)}")
 
-# ---------------- WS CALLBACKS ---------------- #
+# ---------------- CALLBACKS ---------------- #
 def on_ticks(ws, ticks):
     for tick in ticks:
         token = tick["instrument_token"]
@@ -81,21 +80,37 @@ def on_ticks(ws, ticks):
 def on_connect(ws, response):
     ws.subscribe(token_list)
     ws.set_mode(ws.MODE_FULL, token_list)
+    print("✅ WebSocket connected")
 
 def on_close(ws, code, reason):
+    print("❌ WS Closed:", code, reason)
     st.session_state.ws_started = False
-    print("WS Closed:", code, reason)
-def on_error(ws, code, reason):
-    print("WS Error:", code, reason)
+    st.session_state.kws = None
 
-# ---------------- START WS ONLY ONCE ---------------- #
-if (
-    not st.session_state.ws_started
-    and ENCTOKEN
-    and USER_ID
-):
-    kws = KiteTicker(api_key=api_key,
-                     access_token=ENCTOKEN + "&user_id=" + USER_ID)
+def on_error(ws, code, reason):
+    print("⚠️ WS Error:", code, reason)
+    st.session_state.ws_started = False
+    st.session_state.kws = None
+
+# ---------------- START WS (SAFE + THROTTLED) ---------------- #
+RECONNECT_COOLDOWN = 30  # seconds
+
+def start_ws():
+    now = time.time()
+
+    # Prevent rapid reconnect (429 fix)
+    if now - st.session_state.last_ws_connect < RECONNECT_COOLDOWN:
+        st.warning("⏳ Cooling down before reconnect...")
+        return
+
+    # Prevent duplicate WS
+    if st.session_state.kws is not None:
+        return
+
+    kws = KiteTicker(
+        api_key=api_key,
+        access_token=ENCTOKEN + "&user_id=" + USER_ID
+    )
 
     kws.on_ticks = on_ticks
     kws.on_connect = on_connect
@@ -106,10 +121,17 @@ if (
 
     st.session_state.kws = kws
     st.session_state.ws_started = True
+    st.session_state.last_ws_connect = now
 
-# ---------------- SAFE DATA CHECK (NO WHILE LOOP) ---------------- #
+
+# ---------------- INIT WS ---------------- #
+if ENCTOKEN and USER_ID:
+    if not st.session_state.ws_started:
+        start_ws()
+
+# ---------------- DATA CHECK ---------------- #
 if len(st.session_state.ltp_data) == 0 or st.session_state.spot_price is None:
-    st.warning("Waiting for live data...")
+    st.warning("📡 Waiting for live ticks...")
     st.stop()
 
 ltp_data = st.session_state.ltp_data
@@ -150,7 +172,7 @@ else:
         ignore_index=True
     )
 
-# ---------------- UI METRICS ---------------- #
+# ---------------- UI ---------------- #
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("Spot", round(spot_price, 2))
@@ -174,10 +196,7 @@ hist_df = st.session_state.history_df
 strike_df = hist_df[hist_df["strike"] == atm].sort_values("timestamp")
 
 if len(strike_df) > 0:
-    st.write("Price Trend")
     st.line_chart(strike_df.set_index("timestamp")[["ltp_CE","ltp_PE"]])
-
-    st.write("OI Trend")
     st.line_chart(strike_df.set_index("timestamp")[["oi_CE","oi_PE"]])
 
 # ---------------- OI PROFILE ---------------- #
@@ -185,38 +204,11 @@ st.subheader("Distribution of Open Interest across strikes")
 
 fig = go.Figure()
 
-fig.add_bar(
-    y=atm_chain["strike"],
-    x=-atm_chain["oi_CE"],
-    name="Call OI",
-    orientation="h"
-)
+fig.add_bar(y=atm_chain["strike"], x=-atm_chain["oi_CE"], name="Call OI", orientation="h")
+fig.add_bar(y=atm_chain["strike"], x=atm_chain["oi_PE"], name="Put OI", orientation="h")
 
-fig.add_bar(
-    y=atm_chain["strike"],
-    x=atm_chain["oi_PE"],
-    name="Put OI",
-    orientation="h"
-)
-
-fig.add_vline(x=0, line_width=2)
-
-fig.add_hline(
-    y=spot_price,
-    line_dash="dash",
-    annotation_text="Spot Price"
-)
-
-fig.add_hline(
-    y=max_pain,
-    line_dash="dot",
-    annotation_text="Max Pain"
-)
-
-fig.update_layout(
-    title="Options Open Interest Ladder",
-    xaxis_title="Open Interest",
-    yaxis_title="Strike Price",
-)
+fig.add_vline(x=0)
+fig.add_hline(y=spot_price, line_dash="dash", annotation_text="Spot")
+fig.add_hline(y=max_pain, line_dash="dot", annotation_text="Max Pain")
 
 st.plotly_chart(fig, use_container_width=True)
