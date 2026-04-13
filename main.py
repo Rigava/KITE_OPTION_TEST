@@ -45,7 +45,7 @@ if "ws_started" not in st.session_state:
     st.session_state.ws_started = False
 
 # ---------------- INPUT ---------------- #
-default_enctoken = "AOVvEPesdeSuqhZLHeBXQdaIeQ2eNbNW9txIItqyT+wksPdiD5Vpp5bMOfFzg8Uuuw6oPpmjF1P6EdWdNxpU8WEJqVKtYlT6CNeVhNRvRuYAwYm3AaUpcA=="
+default_enctoken = st.secrets['ENCTOKEN']
 ENCTOKEN = st.sidebar.text_input("Enter enctoken", value=default_enctoken, type="password")
 USER_ID = st.sidebar.text_input("User ID", value="ZM1064")
 
