@@ -31,7 +31,7 @@ INDEX = "NIFTY"
 INDEX_TOKEN = 256265
 
 # Auto refresh every 60 sec (NO while loop)
-st_autorefresh(interval=60 * 1000, key="refresh_main")
+st_autorefresh(interval=300 * 1000, key="refresh_main")
 
 # ---------------- GLOBAL STORE (THREAD SAFE) ---------------- #
 ltp_data_global = {}
