@@ -85,9 +85,8 @@ def on_connect(ws, response):
 def on_close(ws, code, reason):
     st.session_state.ws_started = False
     print("WS Closed:", code, reason)
-
-def on_error(ws, error):
-    print("WS Error:", error)
+def on_error(ws, code, reason):
+    print("WS Error:", code, reason)
 
 # ---------------- START WS ONLY ONCE ---------------- #
 if (
