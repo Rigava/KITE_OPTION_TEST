@@ -180,8 +180,8 @@ latest_chain_data = pd.DataFrame(latest_data)
 option_chain = create_option_chain(latest_chain_data)
 with st.expander("Latest Option Chain"):
     st.dataframe(option_chain)
-with st.expander("Historical Data frame"):
-    st.write(historical_data)
+# with st.expander("Historical Data frame"):
+#     st.write(historical_data)
 # pe_oi = option_chain["oi_PE"].sum()
 # ce_oi = option_chain["oi_CE"].sum()
 # pcr = pe_oi / ce_oi if ce_oi != 0 else 0
@@ -207,10 +207,10 @@ atm_chain["max_pain"] = max_pain
 # ---------------- UI ---------------- #
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Spot", round(spot_price, 2))
+col1.metric("Spot", round(spot, 0))
 col2.metric("Max Pain", max_pain)
 col3.metric("PCR", round(pcr, 2) if pcr else "-")
-col4.metric("Straddle", round(straddle, 2))
+col4.metric("Straddle", round(straddle, 0))
 
 # tbl = pa.Table.from_pandas(atm_chain)
 
