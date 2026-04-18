@@ -200,12 +200,13 @@ atm_chain["max_pain"] = max_pain
 
 
 # ---------------- UI ---------------- #
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 col1.metric("Spot", round(spot, 0))
 col2.metric("Max Pain", max_pain)
 col3.metric("PCR", round(pcr, 2) if pcr else "-")
 col4.metric("Straddle", round(straddle, 0))
+col5.metric("ATM", round(atm, 0))
 
 
 # ---------------- TABLES ---------------- #
@@ -217,18 +218,21 @@ with st.expander("📈 Historical Data"):
 
 # ---------------- CHARTS ---------------- #
 st.subheader(f"📊 Selected Strike Trend - Historical")
-
+strikes = hist_df['strike'].unique()
+selected_strikes = st.select("select the strike to display the trend",strikes)
 strike_df_ce = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "CE")].sort_values("Datetime")
-
+strike_df_pe = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "PE")].sort_values("Datetime")
 if len(strike_df_ce) > 0:
     st.write("Price Trend")
     st.line_chart(strike_df_ce.set_index("Datetime")["Close"])
+    st.line_chart(strike_df_pe.set_index("Datetime")["Close"])
 
     st.write("OI Trend")
     st.line_chart(strike_df_ce.set_index("Datetime")["OI"])
+    st.line_chart(strike_df_pe.set_index("Datetime")["OI"])
 
 # ---------------- OI PROFILE ---------------- #
-st.subheader("Open Interest across strikes")
+st.subheader("Latest option chain")
 
 fig = go.Figure()
 
@@ -236,7 +240,7 @@ fig.add_bar(y=atm_chain["strike"], x=-atm_chain["oi_CE"], name="Call OI", orient
 fig.add_bar(y=atm_chain["strike"], x=atm_chain["oi_PE"], name="Put OI", orientation="h")
 
 fig.add_vline(x=0, line_width=2)
-fig.add_hline(y=spot, line_dash="dash", line_color="blue", annotation_text="Spot Price")
+fig.add_hline(y=spot, line_dash="dash", line_color="yellow", annotation_text="Spot Price")
 fig.add_hline(y=max_pain, line_dash="dot", line_color="red", annotation_text="Max Pain")
 
 fig.update_layout(
