@@ -141,6 +141,7 @@ st.sidebar.number_input("Strike range (+/-)", min_value=50, max_value=5000, step
 
 
 # Show token list that includes index token--# We can show the instrument tokens used in the filtered options
+instruments_df = load_instruments()
 options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_name)
 low = max(0, spot - st.session_state.strike_range)
 high = spot + st.session_state.strike_range
