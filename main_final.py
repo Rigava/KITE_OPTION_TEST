@@ -153,11 +153,11 @@ with st.expander("Token list (filtered):"):
 # ---------------- FETCH INSTRUMENT DATA---------------- #
 end = datetime.now()
 start = end - timedelta(days=1)
-historical_data = {}
+historical_dd = []
 latest_data = []
 for _, row in options_filtered.iterrows():
     df = get_historical_data(row["instrument_token"],"5minute",api_key,access_token,start,end)
-# to get the last row of the historical data and extract details
+    # to get the last row of the historical data and extract details
     latest = df.iloc[-1]
     latest_data.append({
             "strike": row["strike"],
@@ -168,10 +168,13 @@ for _, row in options_filtered.iterrows():
     # Store the full historical data for the token in a dictionary for later analysis
     df['strike'] = row["strike"]
     df['type'] = row["instrument_type"]
-    historical_data[row["instrument_token"]] = df
+    df['token'] = row["instrument_token"]   
+    historical_dd.append(df)
 
 
 # ---------------- BUILD Option CHAIN ---------------- #
+hist_df = pd.concat(historical_dd,names=['token'])
+
 latest_chain_data = pd.DataFrame(latest_data)
 
 option_chain = create_option_chain(latest_chain_data)
@@ -210,20 +213,19 @@ with st.expander("📌 Current ATM Option Chain"):
     st.dataframe(atm_chain)
 
 with st.expander("📈 Historical Data"):
-    st.write(historical_data)
+    st.dataframe(hist_df)
 
 # ---------------- CHARTS ---------------- #
 st.subheader(f"📊 Selected Strike Trend - Historical")
 
-# hist_df = st.session_state.history_df
-# strike_df = hist_df[hist_df["strike"] == atm].sort_values("timestamp")
+strike_df = hist_df[hist_df["strike"] == atm].sort_values("timestamp")
 
-# if len(strike_df) > 0:
-#     st.write("Price Trend")
-#     st.line_chart(strike_df.set_index("timestamp")[["ltp_CE","ltp_PE"]])
+if len(strike_df) > 0:
+    st.write("Price Trend")
+    st.line_chart(strike_df.set_index("timestamp")[["ltp_CE","ltp_PE"]])
 
-#     st.write("OI Trend")
-#     st.line_chart(strike_df.set_index("timestamp")[["oi_CE","oi_PE"]])
+    st.write("OI Trend")
+    st.line_chart(strike_df.set_index("timestamp")[["oi_CE","oi_PE"]])
 
 # ---------------- OI PROFILE ---------------- #
 st.subheader("Open Interest across strikes")
