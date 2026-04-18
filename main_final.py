@@ -188,7 +188,7 @@ with st.expander("Historical Data frame"):
 # # st.write("PCR:", round(pcr,2))
 
 # ---------------- METRICS ---------------- #
-atm = get_atm_strike(option_chain, spot_price)
+atm = get_atm_strike(option_chain, spot)
 if atm is None:
     st.warning("ATM not found yet")
 
@@ -199,9 +199,9 @@ max_pain = get_max_pain(option_chain)
 
 atm_chain = atm_chain.copy()
 atm_chain["timestamp"] = datetime.now()
-atm_chain["spot"] = spot_price
+atm_chain["spot"] = spot
 atm_chain["max_pain"] = max_pain
-# st.write(atm_chain)
+
 
 
 # ---------------- UI ---------------- #
