@@ -266,14 +266,14 @@ selected_strikes = st.selectbox("select the strike to display the trend",strikes
 strike_df_ce = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "CE")].sort_values("Datetime")
 strike_df_pe = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "PE")].sort_values("Datetime")
 if len(strike_df_ce) > 0:
-    st.write(f"Price Trend for atm strike {atm}")
+    st.write(f"Price Trend for atm strike {selected_strikes}")
 
     fig3 = go.Figure()
     fig3.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
     fig3.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
     st.plotly_chart(fig3, width='stretch')
 
-    st.write(f"OI Trend for atm strike {atm}")
+    st.write(f"OI Trend for atm strike {selected_strikes}")
 
     fig4 = go.Figure()
     fig4.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
