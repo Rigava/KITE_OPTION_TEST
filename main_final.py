@@ -219,7 +219,7 @@ with st.expander("📈 Historical Data"):
 # ---------------- CHARTS ---------------- #
 st.subheader(f"📊 Selected Strike Trend - Historical")
 strikes = hist_df['strike'].unique()
-selected_strikes = st.select("select the strike to display the trend",strikes)
+selected_strikes = st.selectbox("select the strike to display the trend",strikes)
 strike_df_ce = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "CE")].sort_values("Datetime")
 strike_df_pe = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "PE")].sort_values("Datetime")
 if len(strike_df_ce) > 0:
