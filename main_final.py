@@ -217,23 +217,27 @@ with st.expander("📈 Historical Data"):
     st.dataframe(hist_df)
 
 # ---------------- CHARTS ---------------- #
-st.subheader(f"📊 Selected Strike Trend - Historical")
+st.subheader(f"📊 ATM Strike Trend - Historical")
 # strikes = hist_df['strike'].unique()
 # selected_strikes = st.selectbox("select the strike to display the trend",strikes)
 strike_df_ce = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "CE")].sort_values("Datetime")
 strike_df_pe = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "PE")].sort_values("Datetime")
 if len(strike_df_ce) > 0:
-    st.write("Price Trend")
+    st.write(f"Price Trend for atm strike {atm}")
     # st.line_chart(strike_df_ce.set_index("Datetime")["Close"])
     # st.line_chart(strike_df_pe.set_index("Datetime")["Close"])
     fig1 = go.Figure()
-    fig1.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price ATM CE"))
-    fig1.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price ATM PE"))
+    fig1.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
+    fig1.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
     st.plotly_chart(fig1, width='stretch')
 
-    # st.write("OI Trend")
+    st.write("OI Trend")
     # st.line_chart(strike_df_ce.set_index("Datetime")["OI"])
     # st.line_chart(strike_df_pe.set_index("Datetime")["OI"])
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
+    fig2.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
+    st.plotly_chart(fig2, width='stretch')
 
 # ---------------- OI PROFILE ---------------- #
 st.subheader("Latest option chain")
