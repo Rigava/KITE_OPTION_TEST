@@ -235,7 +235,7 @@ st.subheader(f"📊 Selected Strike Trend - Historical")
 #     st.line_chart(strike_df.set_index("timestamp")[["oi_CE","oi_PE"]])
 
 # ---------------- OI PROFILE ---------------- #
-st.subheader("Distribution of Open Interest across strikes")
+st.subheader("Open Interest across strikes")
 
 fig = go.Figure()
 
@@ -243,8 +243,8 @@ fig.add_bar(y=atm_chain["strike"], x=-atm_chain["oi_CE"], name="Call OI", orient
 fig.add_bar(y=atm_chain["strike"], x=atm_chain["oi_PE"], name="Put OI", orientation="h")
 
 fig.add_vline(x=0, line_width=2)
-fig.add_hline(y=spot, line_dash="dash", line_color="yellow", annotation_text="Spot Price")
-fig.add_hline(y=max_pain, line_dash="dot", line_color="white", annotation_text="Max Pain")
+fig.add_hline(y=spot, line_dash="dash", line_color="blue", annotation_text="Spot Price")
+fig.add_hline(y=max_pain, line_dash="dot", line_color="red", annotation_text="Max Pain")
 
 fig.update_layout(
     title="Options Open Interest Ladder",
