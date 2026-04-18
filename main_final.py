@@ -9,10 +9,7 @@ import streamlit as st
 import plotly.graph_objects as go
 
 from option_chain import create_option_chain
-from metrics import (
-    get_atm_strike, atm_window, atm_straddle,
-    calculate_pcr, get_max_pain
-)
+from metrics import (get_atm_strike, atm_window, atm_straddle, calculate_pcr, get_max_pain)
 
 # ---------------- CONFIG ---------------- #
 st.set_page_config(layout="wide")
@@ -180,19 +177,14 @@ latest_chain_data = pd.DataFrame(latest_data)
 option_chain = create_option_chain(latest_chain_data)
 with st.expander("Latest Option Chain"):
     st.dataframe(option_chain)
-# with st.expander("Historical Data frame"):
-#     st.write(historical_data)
-# pe_oi = option_chain["oi_PE"].sum()
-# ce_oi = option_chain["oi_CE"].sum()
-# pcr = pe_oi / ce_oi if ce_oi != 0 else 0
-# # st.write("PCR:", round(pcr,2))
+
 
 # ---------------- METRICS ---------------- #
 atm = get_atm_strike(option_chain, spot)
 if atm is None:
     st.warning("ATM not found yet")
 
-atm_chain = atm_window(option_chain, atm, n=10)
+atm_chain = atm_window(option_chain, atm, n=20)
 pcr = calculate_pcr(option_chain)
 straddle = atm_straddle(option_chain, atm)
 max_pain = get_max_pain(option_chain)
@@ -212,7 +204,6 @@ col2.metric("Max Pain", max_pain)
 col3.metric("PCR", round(pcr, 2) if pcr else "-")
 col4.metric("Straddle", round(straddle, 0))
 
-# tbl = pa.Table.from_pandas(atm_chain)
 
 # ---------------- TABLES ---------------- #
 with st.expander("📌 Current ATM Option Chain"):
