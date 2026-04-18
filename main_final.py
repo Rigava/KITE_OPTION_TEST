@@ -218,14 +218,14 @@ with st.expander("📈 Historical Data"):
 # ---------------- CHARTS ---------------- #
 st.subheader(f"📊 Selected Strike Trend - Historical")
 
-strike_df = hist_df[hist_df["strike"] == atm].sort_values("Datetime")
+strike_df_ce = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "CE")].sort_values("Datetime")
 
-if len(strike_df) > 0:
+if len(strike_df_ce) > 0:
     st.write("Price Trend")
-    st.line_chart(strike_df.set_index("Datetime")[["ltp_CE","ltp_PE"]])
+    st.line_chart(strike_df_ce.set_index("Datetime")["Close"])
 
     st.write("OI Trend")
-    st.line_chart(strike_df.set_index("Datetime")[["oi_CE","oi_PE"]])
+    st.line_chart(strike_df_ce.set_index("Datetime")["OI"])
 
 # ---------------- OI PROFILE ---------------- #
 st.subheader("Open Interest across strikes")
