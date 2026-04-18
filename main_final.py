@@ -164,7 +164,7 @@ for _, row in options_filtered.iterrows():
     latest = df.iloc[-1]
     latest_data.append({
             "strike": row["strike"],
-            "type": row["instrument_type"],
+            "instrument_type": row["instrument_type"],
             "ltp": latest["Close"],
             "oi": latest["OI"],
             "volume": latest["Volume"]})
