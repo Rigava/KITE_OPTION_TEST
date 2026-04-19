@@ -206,7 +206,7 @@ if st.button("Fetch Data"):
     
     option_chain = create_option_chain(latest_chain_data)
     with st.expander("Latest Option Chain"):
-        st.dataframe(option_chain)
+        st.dataframe(option_chain.style.apply(highlight_levels, axis=1))
     
     
     # ---------------- METRICS ---------------- #
@@ -214,7 +214,8 @@ if st.button("Fetch Data"):
     if atm is None:
         st.warning("ATM not found yet")
     
-    atm_chain = atm_window(option_chain, atm, n=20)
+    atm_chain = option_chain.copy() 
+    # atm_window(option_chain, atm, n=20)
     pcr = calculate_pcr(option_chain)
     straddle = atm_straddle(option_chain, atm)
     max_pain = get_max_pain(option_chain)
