@@ -11,6 +11,8 @@ import plotly.graph_objects as go
 from option_chain import create_option_chain
 from metrics import (get_atm_strike, atm_window, atm_straddle, calculate_pcr, get_max_pain)
 
+from st_utils import get_historical_data, get_instruments,plot_ohlc
+
 # ---------------- CONFIG ---------------- #
 st.set_page_config(layout="wide")
 st.title("📊 Nifty Options Live Tracker")
@@ -33,7 +35,7 @@ def try_create_kite_client(api_key: str, access_token: str) -> Optional[KiteConn
         return None
 
 INDEX = "NIFTY"
-INDEX_TOKEN = 256265
+index_token = 256265
 # -----------------------------------AUTOREFRESH-----------------------------#
 # st_autorefresh(interval=60 * 1000, key="refresh_main") 
 def get_spot_with_kite(kite: KiteConnect, index_token: int) -> Optional[float]:
@@ -108,8 +110,6 @@ if api_key and access_token and KITE_AVAILABLE:
 elif not KITE_AVAILABLE:
     st.sidebar.warning("kiteconnect package not available — live LTP/OI will be disabled")
 
-
-index_token = 256265
 
 spot = None
 if kite_client and index_token:
