@@ -131,155 +131,167 @@ if spot is None or spot == 0:
 @st.cache_data
 def load_instruments():
     return pd.read_csv("https://api.kite.trade/instruments")
-
 def get_weekly_options(df, index):
     df = df[df["name"] == index]
     expiry = min(df["expiry"].unique())
     df = df[df["expiry"] == expiry]
     return df[["instrument_token","strike","instrument_type"]], expiry
-
+def enforce_kite_limits(interval, from_date, to_date):
+    max_days = {
+        "minute": 60,
+        "3minute": 60,
+        "5minute": 60,
+        "15minute": 60,
+        "hour": 180,
+        "day": 5000
+    }
+    allowed_days = max_days.get(interval, 60)
+    actual_days = (to_date - from_date).days
+    if actual_days > allowed_days:
+        from_date = to_date - timedelta(days=allowed_days)
+    return from_date, to_date
 # --- SIDEBAR CONFIG ---
 st.sidebar.text_input("Index name", value=st.session_state.index_name, key="index_name")
 strike_range = st.sidebar.number_input("Strike range (+/-)", min_value=50, max_value=5000, step=50, value=200, key="strike_range")
-# from_date = st.date_input("From Date", datetime.today() - datetime.timedelta(days=30))
-to_date = st.date_input("To Date" , datetime.today())
+from_date = st.sidebar.date_input("From Date", datetime.today() - datetime.timedelta(days=30))
+to_date = st.sidebar.date_input("To Date" , datetime.today())
 interval = st.sidebar.selectbox("Interval", ["day", "5minute", "15minute", "hour"])
 
-
-# Show token list that includes index token--# We can show the instrument tokens used in the filtered options
-instruments_df = load_instruments()
-options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_name)
-low = max(0, spot - strike_range)
-high = spot + strike_range
-options_filtered = options_df[(options_df["strike"] >= low) & (options_df["strike"] <= high)].copy()
-token_list = options_filtered["instrument_token"].astype(str).tolist()
-if index_token:
-    token_list.append(str(index_token))
-with st.expander("Token list (filtered):"):
-    st.write(f"Total subscribed tokens: {len(token_list)}")
-    # st.write(token_list)
-
-# ---------------- FETCH INSTRUMENT DATA---------------- #
-end = datetime.now()
-start = end - timedelta(days=3)
-historical_dd = []
-latest_data = []
-for _, row in options_filtered.iterrows():
-    df = get_historical_data(row["instrument_token"],"5minute",api_key,access_token,start,end)
-    # to get the last row of the historical data and extract details
-    latest = df.iloc[-1]
-    latest_data.append({
-            "strike": row["strike"],
-            "instrument_type": row["instrument_type"],
-            "ltp": latest["Close"],
-            "oi": latest["OI"],
-            "volume": latest["Volume"]})
-    # Store the full historical data for the token in a dictionary for later analysis
-    df['strike'] = row["strike"]
-    df['type'] = row["instrument_type"]
-    df['token'] = row["instrument_token"]   
-    historical_dd.append(df)
-
-
-# ---------------- BUILD Option CHAIN ---------------- #
-hist_df = pd.concat(historical_dd,names=['token'])
-
-latest_chain_data = pd.DataFrame(latest_data)
-
-option_chain = create_option_chain(latest_chain_data)
-with st.expander("Latest Option Chain"):
-    st.dataframe(option_chain)
-
-
-# ---------------- METRICS ---------------- #
-atm = get_atm_strike(option_chain, spot)
-if atm is None:
-    st.warning("ATM not found yet")
-
-atm_chain = atm_window(option_chain, atm, n=20)
-pcr = calculate_pcr(option_chain)
-straddle = atm_straddle(option_chain, atm)
-max_pain = get_max_pain(option_chain)
-
-atm_chain = atm_chain.copy()
-atm_chain["timestamp"] = datetime.now()
-atm_chain["spot"] = spot
-atm_chain["max_pain"] = max_pain
-
-
-
-# ---------------- UI ---------------- #
-col1, col2, col3, col4, col5 = st.columns(5)
-
-col1.metric("Spot", round(spot, 0))
-col2.metric("Max Pain", max_pain)
-col3.metric("PCR", round(pcr, 2) if pcr else "-")
-col4.metric("Straddle", round(straddle, 0))
-col5.metric("ATM", round(atm, 0))
-
-
-# ---------------- TABLES ---------------- #
-with st.expander("📌 Current ATM Option Chain"):
-   st.dataframe(atm_chain.style.apply(highlight_levels, axis=1))
-
-with st.expander("📈 Historical Data"):
-    st.dataframe(hist_df)
-
-# ---------------- CHARTS ---------------- #
-st.subheader(f"📊 ATM Strike Trend - Historical")
-strike_df_ce = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "CE")].sort_values("Datetime")
-strike_df_pe = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "PE")].sort_values("Datetime")
-if len(strike_df_ce) > 0:
-    st.write(f"Price Trend for atm strike {atm}")
-
-    fig1 = go.Figure()
-    fig1.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
-    fig1.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
-    st.plotly_chart(fig1, width='stretch')
-
-    st.write("OI Trend")
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
-    fig2.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
-    st.plotly_chart(fig2, width='stretch')
-
-# ---------------- OI PROFILE ---------------- #
-st.subheader("Latest option chain")
-
-fig = go.Figure()
-
-fig.add_bar(y=atm_chain["strike"], x=-atm_chain["oi_CE"], name="Call OI", orientation="h")
-fig.add_bar(y=atm_chain["strike"], x=atm_chain["oi_PE"], name="Put OI", orientation="h")
-
-fig.add_vline(x=0, line_width=2)
-fig.add_hline(y=spot, line_dash="dash", line_color="yellow", annotation_text="Spot Price")
-fig.add_hline(y=max_pain, line_dash="dot", line_color="red", annotation_text="Max Pain")
-
-fig.update_layout(
-    title="Options Open Interest Ladder",
-    xaxis_title="Open Interest",
-    yaxis_title="Strike Price",
-)
-
-st.plotly_chart(fig, width='stretch')
-
-# ---------------- CHARTS for Selected strikes---------------- #
-st.subheader(f"📊 ATM Strike Trend - Historical")
-strikes = hist_df['strike'].unique()
-selected_strikes = st.selectbox("select the strike to display the trend",strikes)
-strike_df_ce = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "CE")].sort_values("Datetime")
-strike_df_pe = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "PE")].sort_values("Datetime")
-if len(strike_df_ce) > 0:
-    st.write(f"Price Trend for atm strike {selected_strikes}")
-
-    fig3 = go.Figure()
-    fig3.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
-    fig3.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
-    st.plotly_chart(fig3, width='stretch')
-
-    st.write(f"OI Trend for atm strike {selected_strikes}")
-
-    fig4 = go.Figure()
-    fig4.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
-    fig4.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
-    st.plotly_chart(fig4, width='stretch')
+if st.button("Fetch Data"):
+    # Show token list that includes index token--# We can show the instrument tokens used in the filtered options
+    instruments_df = load_instruments()
+    options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_name)
+    low = max(0, spot - strike_range)
+    high = spot + strike_range
+    options_filtered = options_df[(options_df["strike"] >= low) & (options_df["strike"] <= high)].copy()
+    token_list = options_filtered["instrument_token"].astype(str).tolist()
+    if index_token:
+        token_list.append(str(index_token))
+    with st.expander("Token list (filtered):"):
+        st.write(f"Total subscribed tokens: {len(token_list)}")
+        # st.write(token_list)
+    
+    # ---------------- FETCH INSTRUMENT DATA---------------- #
+    end = datetime.now()
+    start = end - timedelta(days=3)
+    historical_dd = []
+    latest_data = []
+    for _, row in options_filtered.iterrows():
+        df = get_historical_data(row["instrument_token"],"5minute",api_key,access_token,start,end)
+        # to get the last row of the historical data and extract details
+        latest = df.iloc[-1]
+        latest_data.append({
+                "strike": row["strike"],
+                "instrument_type": row["instrument_type"],
+                "ltp": latest["Close"],
+                "oi": latest["OI"],
+                "volume": latest["Volume"]})
+        # Store the full historical data for the token in a dictionary for later analysis
+        df['strike'] = row["strike"]
+        df['type'] = row["instrument_type"]
+        df['token'] = row["instrument_token"]   
+        historical_dd.append(df)
+    
+    
+    # ---------------- BUILD Option CHAIN ---------------- #
+    hist_df = pd.concat(historical_dd,names=['token'])
+    
+    latest_chain_data = pd.DataFrame(latest_data)
+    
+    option_chain = create_option_chain(latest_chain_data)
+    with st.expander("Latest Option Chain"):
+        st.dataframe(option_chain)
+    
+    
+    # ---------------- METRICS ---------------- #
+    atm = get_atm_strike(option_chain, spot)
+    if atm is None:
+        st.warning("ATM not found yet")
+    
+    atm_chain = atm_window(option_chain, atm, n=20)
+    pcr = calculate_pcr(option_chain)
+    straddle = atm_straddle(option_chain, atm)
+    max_pain = get_max_pain(option_chain)
+    
+    atm_chain = atm_chain.copy()
+    atm_chain["timestamp"] = datetime.now()
+    atm_chain["spot"] = spot
+    atm_chain["max_pain"] = max_pain
+    
+    
+    
+    # ---------------- UI ---------------- #
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    col1.metric("Spot", round(spot, 0))
+    col2.metric("Max Pain", max_pain)
+    col3.metric("PCR", round(pcr, 2) if pcr else "-")
+    col4.metric("Straddle", round(straddle, 0))
+    col5.metric("ATM", round(atm, 0))
+    
+    
+    # ---------------- TABLES ---------------- #
+    with st.expander("📌 Current ATM Option Chain"):
+       st.dataframe(atm_chain.style.apply(highlight_levels, axis=1))
+    
+    with st.expander("📈 Historical Data"):
+        st.dataframe(hist_df)
+    
+    # ---------------- CHARTS ---------------- #
+    st.subheader(f"📊 ATM Strike Trend - Historical")
+    strike_df_ce = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "CE")].sort_values("Datetime")
+    strike_df_pe = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "PE")].sort_values("Datetime")
+    if len(strike_df_ce) > 0:
+        st.write(f"Price Trend for atm strike {atm}")
+    
+        fig1 = go.Figure()
+        fig1.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
+        fig1.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
+        st.plotly_chart(fig1, width='stretch')
+    
+        st.write("OI Trend")
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
+        fig2.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
+        st.plotly_chart(fig2, width='stretch')
+    
+    # ---------------- OI PROFILE ---------------- #
+    st.subheader("Latest option chain")
+    
+    fig = go.Figure()
+    
+    fig.add_bar(y=atm_chain["strike"], x=-atm_chain["oi_CE"], name="Call OI", orientation="h")
+    fig.add_bar(y=atm_chain["strike"], x=atm_chain["oi_PE"], name="Put OI", orientation="h")
+    
+    fig.add_vline(x=0, line_width=2)
+    fig.add_hline(y=spot, line_dash="dash", line_color="yellow", annotation_text="Spot Price")
+    fig.add_hline(y=max_pain, line_dash="dot", line_color="red", annotation_text="Max Pain")
+    
+    fig.update_layout(
+        title="Options Open Interest Ladder",
+        xaxis_title="Open Interest",
+        yaxis_title="Strike Price",
+    )
+    
+    st.plotly_chart(fig, width='stretch')
+    
+    # ---------------- CHARTS for Selected strikes---------------- #
+    st.subheader(f"📊 ATM Strike Trend - Historical")
+    strikes = hist_df['strike'].unique()
+    selected_strikes = st.selectbox("select the strike to display the trend",strikes)
+    strike_df_ce = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "CE")].sort_values("Datetime")
+    strike_df_pe = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "PE")].sort_values("Datetime")
+    if len(strike_df_ce) > 0:
+        st.write(f"Price Trend for atm strike {selected_strikes}")
+    
+        fig3 = go.Figure()
+        fig3.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
+        fig3.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
+        st.plotly_chart(fig3, width='stretch')
+    
+        st.write(f"OI Trend for atm strike {selected_strikes}")
+    
+        fig4 = go.Figure()
+        fig4.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
+        fig4.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
+        st.plotly_chart(fig4, width='stretch')
