@@ -157,27 +157,30 @@ from_date = st.sidebar.date_input("From Date", datetime.today() - timedelta(days
 to_date = st.sidebar.date_input("To Date" , datetime.today())
 interval = st.sidebar.selectbox("Interval", ["day", "5minute", "15minute", "hour"])
 
+# Show token list that includes index token--# We can show the instrument tokens used in the filtered options
+instruments_df = load_instruments()
+options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_name)
+low = max(0, spot - strike_range)
+high = spot + strike_range
+options_filtered = options_df[(options_df["strike"] >= low) & (options_df["strike"] <= high)].copy()
+token_list = options_filtered["instrument_token"].astype(str).tolist()
+if index_token:
+    token_list.append(str(index_token))
+with st.expander("Token list (filtered):"):
+    st.write(f"Total subscribed tokens: {len(token_list)}")
+
+strikes  = options_filtered["strike"].unique()
+selected_strikes = st.sidebar.selectbox("Select strikes for historical analysis", strikes)
+
+# ---------------- FETCH INSTRUMENT DATA---------------- #
 if st.button("Fetch Data"):
-    # Show token list that includes index token--# We can show the instrument tokens used in the filtered options
-    instruments_df = load_instruments()
-    options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_name)
-    low = max(0, spot - strike_range)
-    high = spot + strike_range
-    options_filtered = options_df[(options_df["strike"] >= low) & (options_df["strike"] <= high)].copy()
-    token_list = options_filtered["instrument_token"].astype(str).tolist()
-    if index_token:
-        token_list.append(str(index_token))
-    with st.expander("Token list (filtered):"):
-        st.write(f"Total subscribed tokens: {len(token_list)}")
-        # st.write(token_list)
-    
-    # ---------------- FETCH INSTRUMENT DATA---------------- #
-    end = datetime.now()
-    start = end - timedelta(days=3)
+    from_date, to_date = enforce_kite_limits(interval, from_date, to_date)
+    # end = datetime.now()
+    # start = end - timedelta(days=3)
     historical_dd = []
     latest_data = []
     for _, row in options_filtered.iterrows():
-        df = get_historical_data(row["instrument_token"],"5minute",api_key,access_token,start,end)
+        df = get_historical_data(row["instrument_token"],"5minute",api_key,access_token,from_date,to_date)
         # to get the last row of the historical data and extract details
         latest = df.iloc[-1]
         latest_data.append({
