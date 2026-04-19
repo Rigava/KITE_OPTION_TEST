@@ -152,7 +152,7 @@ with st.expander("Token list (filtered):"):
 
 # ---------------- FETCH INSTRUMENT DATA---------------- #
 end = datetime.now()
-start = end - timedelta(days=1)
+start = end - timedelta(days=3)
 historical_dd = []
 latest_data = []
 for _, row in options_filtered.iterrows():
