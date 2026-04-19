@@ -279,9 +279,9 @@ if st.button("Fetch Data"):
     st.plotly_chart(fig, width='stretch')
     
     # ---------------- CHARTS for Selected strikes---------------- #
-    st.subheader(f"📊 ATM Strike Trend - Historical")
-    strikes = hist_df['strike'].unique()
-    selected_strikes = st.selectbox("select the strike to display the trend",strikes)
+    st.subheader(f"📊 Strike Trend - Historical")
+    # strikes = hist_df['strike'].unique()
+    # selected_strikes = st.selectbox("select the strike to display the trend",strikes)
     strike_df_ce = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "CE")].sort_values("Datetime")
     strike_df_pe = hist_df[(hist_df["strike"] == selected_strikes) & (hist_df["type"] == "PE")].sort_values("Datetime")
     if len(strike_df_ce) > 0:
