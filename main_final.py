@@ -197,20 +197,7 @@ if st.button("Fetch Data"):
         df['type'] = row["instrument_type"]
         df['token'] = row["instrument_token"]   
         historical_dd.append(df)
-    
-    
-    # ---------------- BUILD Option CHAIN ---------------- #
-    hist_df = pd.concat(historical_dd,names=['token'])
-    # Step 1: Set index and pivot
-    merged_df = hist_df.pivot_table(index=['Datetime', 'strike'], columns='type', values=['Close', 'Volume', 'OI'])
-    merged_df.columns = [f"{col[0]}_{col[1]}" for col in merged_df.columns]
-    merged_df = merged_df.reset_index()
-    
-
-    with st.expander("Download Historical Chain for analysis"):
-        st.dataframe(merged_df)
-    
-    
+        
     # ---------------- METRICS ---------------- #
     latest_chain_data = pd.DataFrame(latest_data)
     option_chain = create_option_chain(latest_chain_data)
@@ -229,6 +216,20 @@ if st.button("Fetch Data"):
     atm_chain["spot"] = spot
     atm_chain["max_pain"] = max_pain
     
+    # ---------------- Pvot the historical data by CE and PE side-by-side-----merge for each (Datetime, strike) pair ---------------- #
+    hist_df = pd.concat(historical_dd,names=['token'])
+    # Step 1: Set index and pivot
+    merged_df = hist_df.pivot_table(index=['Datetime', 'strike'], columns='type', values=['Close', 'Volume', 'OI'])
+    merged_df.columns = [f"{col[0]}_{col[1]}" for col in merged_df.columns]
+    merged_df = merged_df.reset_index()
+    merged_df['spot']=spot
+    merged_df['max_pain'] = max_pain
+
+    with st.expander("📈 Historical Data - download chain for analysis"):
+        st.dataframe(merged_df)
+    
+
+    
     
     
     # ---------------- UI ---------------- #
@@ -245,8 +246,8 @@ if st.button("Fetch Data"):
     with st.expander("📌 Current ATM Option Chain"):
        st.dataframe(atm_chain.style.apply(highlight_levels, axis=1))
     
-    with st.expander("📈 Historical Data"):
-        st.dataframe(hist_df)
+    # with st.expander("📈 Historical Data"):
+    #     st.dataframe(hist_df)
     
     # ---------------- CHARTS ---------------- #
     st.subheader(f"📊 ATM Strike Trend - Historical")
