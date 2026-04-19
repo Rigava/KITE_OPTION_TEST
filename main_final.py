@@ -206,7 +206,7 @@ if st.button("Fetch Data"):
     
     option_chain = create_option_chain(latest_chain_data)
     with st.expander("Latest Option Chain"):
-        st.dataframe(option_chain.style.apply(highlight_levels, axis=1))
+        st.dataframe(option_chain)
     
     
     # ---------------- METRICS ---------------- #
