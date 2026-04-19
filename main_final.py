@@ -84,9 +84,14 @@ def get_historical_data(instrument_token, interval,api_key,access_token,from_dat
 # session state defaults
 if "index_name" not in st.session_state:
     st.session_state.index_name = "NIFTY"
-if "strike_range" not in st.session_state:
-    st.session_state.strike_range = 200
-
+# if "strike_range" not in st.session_state:
+#     st.session_state.strike_range = 200
+def highlight_levels(row):
+    if row["strike"] == max_pain:
+        return ["background-color: purple"] * len(row)
+    elif row["strike"] == round(spot/50)*50:
+        return ["background-color: green"] * len(row)
+    return [""] * len(row)
 # ---------------- INPUT for KITE API---------------- #
 api_key = st.secrets['API_KEY']
 access_token = st.secrets['ACCESS_TOKEN']
@@ -133,22 +138,26 @@ def get_weekly_options(df, index):
     df = df[df["expiry"] == expiry]
     return df[["instrument_token","strike","instrument_type"]], expiry
 
+# --- SIDEBAR CONFIG ---
 st.sidebar.text_input("Index name", value=st.session_state.index_name, key="index_name")
-st.sidebar.number_input("Strike range (+/-)", min_value=50, max_value=5000, step=50, value=st.session_state.strike_range, key="strike_range")
+strike_range = st.sidebar.number_input("Strike range (+/-)", min_value=50, max_value=5000, step=50, value=200, key="strike_range")
+from_date = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=30))
+to_date = st.date_input("To Date" , datetime.date.today())
+interval = st.sidebar.selectbox("Interval", ["day", "5minute", "15minute", "hour"])
 
 
 # Show token list that includes index token--# We can show the instrument tokens used in the filtered options
 instruments_df = load_instruments()
 options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_name)
-low = max(0, spot - st.session_state.strike_range)
-high = spot + st.session_state.strike_range
+low = max(0, spot - strike_range)
+high = spot + strike_range
 options_filtered = options_df[(options_df["strike"] >= low) & (options_df["strike"] <= high)].copy()
 token_list = options_filtered["instrument_token"].astype(str).tolist()
 if index_token:
     token_list.append(str(index_token))
 with st.expander("Token list (filtered):"):
     st.write(f"Total subscribed tokens: {len(token_list)}")
-    st.write(token_list)
+    # st.write(token_list)
 
 # ---------------- FETCH INSTRUMENT DATA---------------- #
 end = datetime.now()
@@ -211,7 +220,7 @@ col5.metric("ATM", round(atm, 0))
 
 # ---------------- TABLES ---------------- #
 with st.expander("📌 Current ATM Option Chain"):
-    st.dataframe(atm_chain)
+   st.dataframe(atm_chain.style.apply(highlight_levels, axis=1))
 
 with st.expander("📈 Historical Data"):
     st.dataframe(hist_df)
