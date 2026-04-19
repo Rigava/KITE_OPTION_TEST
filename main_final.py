@@ -163,11 +163,14 @@ options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_n
 low = max(0, spot - strike_range)
 high = spot + strike_range
 options_filtered = options_df[(options_df["strike"] >= low) & (options_df["strike"] <= high)].copy()
+token_list_full = options_df["instrument_token"].astype(str).tolist()
 token_list = options_filtered["instrument_token"].astype(str).tolist()
 if index_token:
     token_list.append(str(index_token))
 with st.expander("Token list (filtered):"):
+    st.write(f"Total tokens: {len(token_list_full)}")
     st.write(f"Total subscribed tokens: {len(token_list)}")
+    st.write(options_filtered)
 
 strikes  = options_filtered["strike"].unique()
 selected_strikes = st.sidebar.selectbox("Select strikes for historical analysis", strikes)
@@ -180,7 +183,7 @@ if st.button("Fetch Data"):
     historical_dd = []
     latest_data = []
     for _, row in options_filtered.iterrows():
-        df = get_historical_data(row["instrument_token"],"5minute",api_key,access_token,from_date,to_date)
+        df = get_historical_data(row["instrument_token"],interval,api_key,access_token,from_date,to_date)
         # to get the last row of the historical data and extract details
         latest = df.iloc[-1]
         latest_data.append({
