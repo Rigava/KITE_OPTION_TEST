@@ -141,7 +141,7 @@ def get_weekly_options(df, index):
 # --- SIDEBAR CONFIG ---
 st.sidebar.text_input("Index name", value=st.session_state.index_name, key="index_name")
 strike_range = st.sidebar.number_input("Strike range (+/-)", min_value=50, max_value=5000, step=50, value=200, key="strike_range")
-from_date = st.date_input("From Date", datetime.today() - datetime.timedelta(days=30))
+# from_date = st.date_input("From Date", datetime.today() - datetime.timedelta(days=30))
 to_date = st.date_input("To Date" , datetime.today())
 interval = st.sidebar.selectbox("Interval", ["day", "5minute", "15minute", "hour"])
 
