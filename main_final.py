@@ -201,15 +201,19 @@ if st.button("Fetch Data"):
     
     # ---------------- BUILD Option CHAIN ---------------- #
     hist_df = pd.concat(historical_dd,names=['token'])
+    # Step 1: Set index and pivot
+    merged_df = hist_df.pivot_table(index=['Datetime', 'strike'], columns='type', values=['Close', 'Volume', 'OI'])
+    merged_df.columns = [f"{col[0]}_{col[1]}" for col in merged_df.columns]
+    merged_df = merged_df.reset_index()
     
-    latest_chain_data = pd.DataFrame(latest_data)
-    
-    option_chain = create_option_chain(latest_chain_data)
-    with st.expander("Latest Option Chain"):
-        st.dataframe(option_chain)
+
+    with st.expander("Download Historical Chain for analysis"):
+        st.dataframe(merged_df)
     
     
     # ---------------- METRICS ---------------- #
+    latest_chain_data = pd.DataFrame(latest_data)
+    option_chain = create_option_chain(latest_chain_data)
     atm = get_atm_strike(option_chain, spot)
     if atm is None:
         st.warning("ATM not found yet")
