@@ -259,14 +259,18 @@ if st.button("Fetch Data"):
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
         fig1.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
-        fig1.update_xaxes(rangebreaks=[dict(bounds=["sat", "sun"])])
+        fig1.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]),
+                                       dict(bounds=[9.15, 15.30], pattern="hour")
+                                      ])
         st.plotly_chart(fig1, width='stretch')
     
         st.write("OI Trend")
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
         fig2.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
-        fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "sun"])])
+        fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]),
+                                        dict(bounds=[9.15, 15.30], pattern="hour")
+                                      ])
         st.plotly_chart(fig2, width='stretch')
     
     # ---------------- OI PROFILE ---------------- #
