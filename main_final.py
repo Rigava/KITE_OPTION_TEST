@@ -271,29 +271,24 @@ if st.button("Fetch Data"):
     
     # ---------------- CHARTS ---------------- #
     st.subheader(f"📊 ATM Strike Trend - Historical")
+    st.write(f"Price Trend for atm strikes")
+    fig1 = go.Figure()
+    fig1.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_Close_CE"], name="Price CE",line=dict(color='red')))
+    fig1.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_Close_PE"], name="Price PE",line=dict(color='green')))
+    fig1.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
+    st.plotly_chart(fig1, width='stretch')
 
-    if len(strike_df_ce) > 0:
-        st.write(f"Price Trend for atm strikes")
-    
-        fig1 = go.Figure()
-        fig1.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_Close_CE"], name="Price CE",line=dict(color='red')))
-        fig1.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_Close_PE"], name="Price PE",line=dict(color='green')))
-        fig1.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
-        st.plotly_chart(fig1, width='stretch')
-    
-        st.write("OI Trend")
-        fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_CE"], name="OI CE",line=dict(color='red')))
-        fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_PE"], name="OI PE",line=dict(color='green')))
-        fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
-        st.plotly_chart(fig2, width='stretch')
+    st.write("OI Trend")
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_CE"], name="OI CE",line=dict(color='red')))
+    fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_PE"], name="OI PE",line=dict(color='green')))
+    fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
+    st.plotly_chart(fig2, width='stretch')
 
     
     # ---------------- OI PROFILE ---------------- #
     st.subheader("Latest option chain")
-    
     fig = go.Figure()
-    
     fig.add_bar(y=atm_chain["strike"], x=-atm_chain["oi_CE"], name="Call OI", orientation="h")
     fig.add_bar(y=atm_chain["strike"], x=atm_chain["oi_PE"], name="Put OI", orientation="h")
     
@@ -301,15 +296,10 @@ if st.button("Fetch Data"):
     fig.add_hline(y=spot, line_dash="dash", line_color="yellow", annotation_text="Spot Price")
     fig.add_hline(y=max_pain, line_dash="dot", line_color="red", annotation_text="Max Pain")
     
-    fig.update_layout(
-        title="Options Open Interest Ladder",
-        xaxis_title="Open Interest",
-        yaxis_title="Strike Price",
-    )
-    
+    fig.update_layout(title="Options Open Interest Ladder", xaxis_title="Open Interest", yaxis_title="Strike Price",)
     st.plotly_chart(fig, width='stretch')
     
-    # ---------------- CHARTS for Selected strikes---------------- #
+    # ---------------- CHARTS for Selected strikes using hist_df---------------- #
     st.subheader(f"📊 Strike Trend - Historical")
     # strikes = hist_df['strike'].unique()
     # selected_strikes = st.selectbox("select the strike to display the trend",strikes)
@@ -321,9 +311,7 @@ if st.button("Fetch Data"):
         fig3 = go.Figure()
         fig3.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
         fig3.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
-        fig3.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]),
-                                       dict(bounds=[15.5,9.25], pattern="hour")
-                                      ])
+        fig3.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5,9.25], pattern="hour")])
         st.plotly_chart(fig3, width='stretch')
     
         st.write(f"OI Trend for atm strike {selected_strikes}")
@@ -331,7 +319,5 @@ if st.button("Fetch Data"):
         fig4 = go.Figure()
         fig4.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
         fig4.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
-        fig4.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]),
-                                       dict(bounds=[15.5,9.25], pattern="hour")
-                                      ])
+        fig4.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5,9.25], pattern="hour")])
         st.plotly_chart(fig4, width='stretch')
