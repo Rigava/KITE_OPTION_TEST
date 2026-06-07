@@ -78,3 +78,32 @@ def get_max_pain(df):
     max_pain_strike = pain_df.loc[pain_df["total_pain"].idxmin(), "expiry_price"]
     # print("Max Pain Strike:", max_pain_strike)
     return max_pain_strike
+def get_max_pain_by_datetime(df):
+    results = []
+    # Process each timestamp separately
+    for dt, group in df.groupby("Datetime"):
+        strikes = np.sort(group["strike"].unique())
+        pain_list = []
+        for expiry_price in strikes:
+            # Call pain
+            call_pain = (np.maximum(expiry_price - group["strike"], 0)* group["OI_CE"].fillna(0)).sum()
+            # Put pain
+            put_pain = (np.maximum(group["strike"] - expiry_price, 0)* group["OI_PE"].fillna(0)).sum()
+
+            total_pain = call_pain + put_pain
+            pain_list.append(
+                {   "expiry_price": expiry_price,
+                    "total_pain": total_pain,
+                }
+            )
+        pain_df = pd.DataFrame(pain_list)
+        max_pain_strike = pain_df.loc[pain_df["total_pain"].idxmin(),"expiry_price"]
+        results.append(
+            {
+                "Datetime": dt,
+                "MaxPain": max_pain_strike,
+                "Spot": group["spot"].iloc[0]
+            }
+        )
+
+    return pd.DataFrame(results)
