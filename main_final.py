@@ -135,7 +135,7 @@ def get_weekly_options(df, index):
     df = df[df["name"] == index]
     expiry = min(df["expiry"].unique())
     df = df[df["expiry"] == expiry]
-    return df[["instrument_token","strike","instrument_type"]], expiry
+    return df[["instrument_token","strike","instrument_type","expiry"]], expiry
 def enforce_kite_limits(interval, from_date, to_date):
     max_days = {
         "minute": 60,
