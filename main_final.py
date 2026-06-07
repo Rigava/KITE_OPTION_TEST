@@ -221,8 +221,8 @@ if st.button("Fetch Data"):
     hist_df = pd.concat(historical_dd,names=['token'])
     # Step 1: Set index and pivot
     pivot_df = hist_df.pivot_table(index=['Datetime', 'strike'], columns='type', values=['Close', 'Volume', 'OI'])
-    pivot_df.columns = [f"{col[0]}_{col[1]}" for col in merged_df.columns]
-    pivot_df = merged_df.reset_index()
+    pivot_df.columns = [f"{col[0]}_{col[1]}" for col in pivot_df.columns]
+    pivot_df = pivot_df.reset_index()
 
     merged_df = pd.merge(pivot_df, df_nifty[['Datetime','spot']], on="Datetime",  how="left")
 
