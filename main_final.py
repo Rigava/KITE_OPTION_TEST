@@ -267,32 +267,27 @@ if st.button("Fetch Data"):
     with st.expander("📌 Current ATM Option Chain"):
        st.dataframe(atm_chain.style.apply(highlight_levels, axis=1))
     
-    # with st.expander("📈 Historical Data"):
-    #     st.dataframe(hist_df)
+
     
     # ---------------- CHARTS ---------------- #
     st.subheader(f"📊 ATM Strike Trend - Historical")
-    strike_df_ce = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "CE")].sort_values("Datetime")
-    strike_df_pe = hist_df[(hist_df["strike"] == atm) & (hist_df["type"] == "PE")].sort_values("Datetime")
+
     if len(strike_df_ce) > 0:
-        st.write(f"Price Trend for atm strike {atm}")
+        st.write(f"Price Trend for atm strikes")
     
         fig1 = go.Figure()
-        fig1.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["Close"], name="Price CE"))
-        fig1.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["Close"], name="Price PE"))
-        # fig1.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]),
-        #                                dict(bounds=[15.5,9.25], pattern="hour")
-        #                               ])
+        fig1.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_Close_CE"], name="Price CE",line=dict(color='red')))
+        fig1.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_Close_PE"], name="Price PE",line=dict(color='green')))
+        fig1.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
         st.plotly_chart(fig1, width='stretch')
     
         st.write("OI Trend")
         fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(x=strike_df_ce["Datetime"], y=strike_df_ce["OI"], name="OI CE"))
-        fig2.add_trace(go.Scatter(x=strike_df_pe["Datetime"], y=strike_df_pe["OI"], name="OI PE"))
-        # fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]),
-        #                                 dict(bounds=[15.5,9.25], pattern="hour")
-        #                               ])
+        fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_CE"], name="OI CE",line=dict(color='red')))
+        fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_PE"], name="OI PE",line=dict(color='green')))
+        fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
         st.plotly_chart(fig2, width='stretch')
+
     
     # ---------------- OI PROFILE ---------------- #
     st.subheader("Latest option chain")
