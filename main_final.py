@@ -156,7 +156,9 @@ strike_range = st.sidebar.number_input("Strike range (+/-)", min_value=50, max_v
 from_date = st.sidebar.date_input("From Date", datetime.today() - timedelta(days=10))
 to_date = st.sidebar.date_input("To Date" , datetime.today())
 interval = st.sidebar.selectbox("Interval", ["day", "5minute", "15minute", "hour"])
-
+# --------------------------------GET NIFTY HISTORY-------------------------------
+df_nifty = get_historical_data("256265",interval,api_key,access_token,from_date,to_date)
+df_nifty['spot'] = df_nifty['Close']
 # Show token list that includes index token--# We can show the instrument tokens used in the filtered options
 instruments_df = load_instruments()
 options_df, expiry = get_weekly_options(instruments_df, st.session_state.index_name)
@@ -178,8 +180,6 @@ selected_strikes = st.sidebar.selectbox("Select strikes for historical analysis"
 # ---------------- FETCH INSTRUMENT DATA---------------- #
 if st.button("Fetch Data"):
     from_date, to_date = enforce_kite_limits(interval, from_date, to_date)
-    # end = datetime.now()
-    # start = end - timedelta(days=3)
     historical_dd = []
     latest_data = []
     for _, row in options_filtered.iterrows():
@@ -195,7 +195,8 @@ if st.button("Fetch Data"):
         # Store the full historical data for the token in a dictionary for later analysis
         df['strike'] = row["strike"]
         df['type'] = row["instrument_type"]
-        df['token'] = row["instrument_token"]   
+        df['token'] = row["instrument_token"] 
+        df['expiry'] = row['expiry']
         historical_dd.append(df)
         
     # ---------------- METRICS ---------------- #
@@ -219,14 +220,34 @@ if st.button("Fetch Data"):
     # ---------------- Pvot the historical data by CE and PE side-by-side-----merge for each (Datetime, strike) pair ---------------- #
     hist_df = pd.concat(historical_dd,names=['token'])
     # Step 1: Set index and pivot
-    merged_df = hist_df.pivot_table(index=['Datetime', 'strike'], columns='type', values=['Close', 'Volume', 'OI'])
-    merged_df.columns = [f"{col[0]}_{col[1]}" for col in merged_df.columns]
-    merged_df = merged_df.reset_index()
-    merged_df['spot']=spot
-    merged_df['max_pain'] = max_pain
+    pivot_df = hist_df.pivot_table(index=['Datetime', 'strike'], columns='type', values=['Close', 'Volume', 'OI'])
+    pivot_df.columns = [f"{col[0]}_{col[1]}" for col in merged_df.columns]
+    pivot_df = merged_df.reset_index()
 
-    with st.expander("📈 Historical Data - download chain for analysis"):
+    merged_df = pd.merge(pivot_df, df_nifty[['Datetime','spot']], on="Datetime",  how="left")
+
+    #Get ATM Details for each timestamp sorting by distance
+    merged_df["distance"] = abs(merged_df["strike"] - merged_df["spot"])
+    atm_options = (merged_df.sort_values('distance').groupby('Datetime').first().reset_index())
+    atm_options['ATM_straddle'] = atm_options['Close_CE'] + atm_options['Close_PE']
+    atm_options = atm_options.rename(columns={"strike": "ATM_strike", "Close_CE": "ATM_Close_CE", "Close_PE": "ATM_Close_PE", "Volume_CE": "ATM_Volume_CE", "Volume_PE": "ATM_Volume_PE", "OI_CE": "ATM_OI_CE", "OI_PE": "ATM_OI_PE"})
+    # Get features at timestamp level via aggregation of OI & Volume, max pain, atm straddle
+    features = (merged_df.groupby('Datetime').agg(
+        ce_oi = ("OI_CE", "sum"),
+        pe_oi=('OI_PE','sum'),
+        ce_vol=('Volume_CE','sum'),
+        pe_vol=('Volume_PE','sum')).reset_index())
+    features['oi_pcr'] = (features['pe_oi'] / features['ce_oi'])
+    features['vol_pcr'] = (features['pe_vol'] / features['ce_vol'])
+    features['oi_imbalance'] = (features['pe_oi'] - features['ce_oi'])
+    features['vol_imbalance'] = (features['pe_vol'] - features['ce_vol'])
+
+    all_features=pd.merge(features, get_max_pain_by_datetime(merged_df), on="Datetime", how="left")
+    all_features = pd.merge(all_features, atm_options[['Datetime', 'ATM_strike','ATM_straddle','ATM_Close_CE', 'ATM_Close_PE', 'ATM_Volume_CE', 'ATM_Volume_PE', 'ATM_OI_CE', 'ATM_OI_PE']], on="Datetime", how="left")
+    with st.expander("📈 Historical RAW Data - download chain for analysis"):
         st.dataframe(merged_df)
+    with st.expander("📈 Option Feature Data"):
+        st.dataframe(all_features)
     
 
     
