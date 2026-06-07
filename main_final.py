@@ -278,12 +278,20 @@ if st.button("Fetch Data"):
     fig1.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
     st.plotly_chart(fig1, width='stretch')
 
-    st.write("OI Trend")
+    st.write("OI Trend for atm strike")
     fig2 = go.Figure()
     fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_CE"], name="OI CE",line=dict(color='red')))
     fig2.add_trace(go.Scatter(x=atm_options["Datetime"], y=atm_options["ATM_OI_PE"], name="OI PE",line=dict(color='green')))
     fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
     st.plotly_chart(fig2, width='stretch')
+
+    # Visualise the max pain, spot, and ATM straddle over time
+    fig5 = go.Figure()
+    fig5.add_trace(go.Scatter(x=all_features["Datetime"], y=all_features["MaxPain"], name='Max Pain', line=dict(color='red')))
+    fig5.add_trace(go.Scatter(x=all_features["Datetime"], y=all_features["Spot"], name='Spot Price', line=dict(color='yellow')))
+    fig5.add_trace(go.Scatter(x=all_features["Datetime"], y=all_features["ATM_straddle"], name='ATM Straddle', line=dict(color='blue')))
+    fig5.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[15.5, 9.25], pattern="hour")])
+    st.plotly_chart(fig5, width='stretch')
 
     
     # ---------------- OI PROFILE ---------------- #
