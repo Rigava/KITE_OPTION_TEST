@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 # Detect ATM strike & ATM window
 def get_atm_strike(chain,spot_price=None):
     if spot_price is None:
